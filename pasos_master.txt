@@ -1,0 +1,141 @@
+1. Crear entorno virtual
+python -m venv venv_vacio
+
+2. Activar el entorno virtual para comenzar a trabajar, debe aparecer un prefijo con el nombre del ambiente virtual
+
+./veka/Scripts/activate
+.\veka\Scripts\deactivate
+
+3. Instalar django o requirements.txt (si se está instalando un proyecto funcional)
+pip install django
+pip install -r requirements.txt
+pip install psycopg2 o la bbdd que sea
+
+4.- cambiarse a directorio del proyecto con comando: cd nombre_proyecto
+
+5. Crear el proyecto (genera la estructura inicial del proyecto...y el settings.py del proyecto)
+django-admin.exe startproject config . (crea el proyecto sin repetir el nombre del proyecto, se ve más normal)
+django-admin startproject sistema_producto (duplica carpetas)
+django-admin startproject my_tennis_club (duplica carpetas)
+
+6. En settings.py, realizar configuraciones iniciales del proyecto -z probar el proyecto y realizar migraciones iniciales
+- Crear carpeta 'templates' y 'static' 
+- Configurar el directorio donde estaran los TEMPLATES
+- Configurar la base de datos
+- Definir la ruta para "static"
+
+7. Crear una plantilla base o master template (base.html)
+8. Crear los partials (navbar, footer, search_bar, filters, etc.)
+
+9. Crear la/las aplicacion/es que contendrá/n el sistema, por ejemplo, aplicación de USUARIOS, PREDICCION
+
+Orden Recomendado para Crear App, Modelo, URLS, Vistas, y Plantillas en Django
+
+8.1 Utiliza el comando python manage.py startapp <nombre_app> para crear una nueva aplicación dentro de tu proyecto. Esto te dará una estructura básica con directorios para modelos, vistas, plantillas y otros elementos.
+python manage.py startapp usuarios <== nombre de la aplicación "usuarios"
+python manage.py startapp <nombre_de_la_aplicación>
+
+8.2 Definir los Modelos:
+
+En el archivo models.py de tu aplicación, define los modelos que representarán los datos de tu aplicación. Por ejemplo, modelo Hotel y modelo Calificacion.
+
+8.3 Crear las URLs:
+
+Crear el archivo urls.py, dentro de la app
+
+En el archivo urls.py de tu aplicación, define los patrones de URL que mapearán las solicitudes HTTP a las vistas correspondientes. Esto es como un "menú" que le dice a Django qué vista debe ejecutar cuando un usuario solicita una determinada URL.
+
+8.4 Crear las Vistas:
+
+En el archivo views.py de tu aplicación, crea las funciones de vista que procesarán las solicitudes y devolverán las respuestas. Estas vistas se encargarán de la lógica de tu aplicación, como consultar la base de datos, realizar cálculos y preparar los datos para las plantillas.
+
+8.5 Crear las Plantillas:
+
+En el directorio templates/<nombre_app> de tu aplicación, crea las plantillas HTML que definirán la estructura y el contenido de las páginas de tu sitio web. Estas plantillas utilizarán el lenguaje de plantillas de Django para mostrar los datos dinámicos proporcionados por las vistas.
+
+9. Registrar las aplicaciones en settings
+- Registrar la(s) aplicacion(es) (apps)
+
+10. Para renderizar páginas, se debe crear carpeta templates a la misma altura donde esta manage.py
+
+11. Para crear una página, defino una función o clase en views.py, ejemplo def home(), def clientes() o Class Productos(), luego establezco su ruta en urls.py.
+
+Cada vez que se genera una nueva página, siempre va el template en la carpeta template, la función en la vista (views.py) y la url en (urls.py).
+Para poder conectar views y urls, en urls.py agrego:
+from . import views   # Importar información de las vistas (las vistas son funciones como en Streamlit)
+
+12. Para ver la página puedo usar render o loader, vamos a ver el caso de render
+- Voy a views y en la def que llama la página le agrego return, le paso request, nombrePag.html, y contexto (entre llaves)
+para que se vean las imagenes, al inicio del template, cargar los statics: {% load static %}
+
+13. A cada aplicación agregar el archivo urls.py. Puede haber una general, en la raiz. 
+Cuando se define la url del home, se deja en blanco para que por defecto, vaya a la raiz sin tener que especificar la ruta, se deja asi: 
+path('', views.home, name='home'),
+
+14. Luego de crear la app, o antes, registrarla en settings.py
+
+15.- Verificar que una app se encuentra correctamente instalada: 
+python manage.py check nom_app
+
+16. Crear el usuario "superuser", debe estar hecha la primera migración
+py.exe .\manage.py createsuperuser
+
+17. Definir una estructura de templates dinámicos, crear carpeta layouts / partials / templates y otras carpetas necesarias. 
+
+18. Cada vez que se agregan, modifican / etc los MODELOS hay que generar migraciones y aplicarlas
+python manage.py makemigrations -> crear las migraciones
+python manage.py migrate -> para aplicar las migraciones
+
+python manage.py migrate ==> / makemigrations
+python manage.py migrate
+
+Asignar un nombre a la migración
+paso 1: python manage.py makemigrations laboratorio --name actualizado_campos
+paso 2: python manage.py migrate
+
+18.- Levantar servidor:
+python manage.py runserver
+
+19. Bajar el server "CTRL+C"
+
+20. Crear o actualizar el archivo requirements.txt (puede usar un nombre diferente, 
+pip freeze > requirements.txt
+
+21. Crear backup base de datos
+
+22. Modificar nombre de la bbdd...directo en name del settings.py
+
+23. crear .gtignore y agregar carpeta de ambiente virtual, puede ser "venv", "amb_virtual"
+
+24. Desactivar el ambiente virtual
+.\amb_virtual\Scripts\deactivate
+
+25. version django
+python -m django --version
+
+26. Crear usuario en postgresql
+CREATE USER userdjango WITH PASSWORD 'userdjango';
+
+27. Dar privilegios a un usuario sobre una base de datos
+GRANT ALL PRIVILEGES ON DATABASE db_final_orm TO userdjango;
+
+
+28. Recuperar desde backup con pgdump
+
+psql -U postgres hotel_db < hotel.sql
+
+29. Crear modelo desde INSPECTDB
+
+30. Eliminar el esquema de la BBDD, para instalación limpia pre-producción
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+
+31. Eliminar las migraciones
+
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+
+find . -path "*/migrations/*.pyc" -delete
+
+
+crear un archivo en blanco, desde cmd: type nul > nomb_archivo.txt
