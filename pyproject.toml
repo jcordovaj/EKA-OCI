@@ -9,4 +9,12 @@ dependencies = [
     "sqlalchemy",
     "psycopg2-binary",
     "pydantic-settings",
+    "fastapi",
+    "uvicorn",
+    "alembic",
+    "pgvector",
+    "python-dotenv",
+    "python-multipart",
+    "orjson"
+
 ]

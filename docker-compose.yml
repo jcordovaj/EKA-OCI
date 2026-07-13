@@ -1,13 +1,12 @@
-version: '3.8'
 
 services:
   db:
     build: .
     container_name: eka_postgres
     environment:
-      POSTGRES_DB: eka_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
@@ -32,3 +31,7 @@ services:
     container_name: eka_redis
     ports:
       - "6379:6379"
+
+# TODO(MVP):
+## Replace trust with password authentication
+## before OCI deployment.
