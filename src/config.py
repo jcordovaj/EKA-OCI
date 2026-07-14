@@ -10,9 +10,12 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        # --- AQUÍ HACES EL CAMBIO ---
-        # Cambiamos 'postgresql+psycopg2://' por 'postgresql+pg8000://'
-        return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        return (
+                f"postgresql+psycopg2://"
+                f"{self.db_user}:{self.db_password}"
+                f"@{self.db_host}:{self.db_port}"
+                f"/{self.db_name}"
+            )
 
     class Config:
         env_file = ".env"
