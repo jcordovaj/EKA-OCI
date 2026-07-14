@@ -105,7 +105,7 @@ pip freeze > requirements.txt
 
 22. Modificar nombre de la bbdd...directo en name del settings.py
 
-23. crear .gtignore y agregar carpeta de ambiente virtual, puede ser "venv", "amb_virtual"
+23. crear .gitignore y agregar carpeta de ambiente virtual, puede ser "venv", "amb_virtual"
 
 24. Desactivar el ambiente virtual
 .\amb_virtual\Scripts\deactivate
@@ -118,7 +118,6 @@ CREATE USER userdjango WITH PASSWORD 'userdjango';
 
 27. Dar privilegios a un usuario sobre una base de datos
 GRANT ALL PRIVILEGES ON DATABASE db_final_orm TO userdjango;
-
 
 28. Recuperar desde backup con pgdump
 
@@ -137,5 +136,15 @@ find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 
 find . -path "*/migrations/*.pyc" -delete
 
-
 crear un archivo en blanco, desde cmd: type nul > nomb_archivo.txt
+
+32. # Antes de empezar cualquier trabajo en la capa 'persistence' o 'storage'...
+BASH 
+docker-compose up -d postgres redis minio 
+
+33. Bajar servicios docker
+BASH 
+docker-compose down
+
+
+
