@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 # Asumimos que 'Base' ha sido definido previamente en la capa de ORM o se importa:
-from src.persistence.orm.base import Base # Asumiendo una clase base para las tablas
+#from src.persistence.orm.base import Base # Asumiendo una clase base para las tablas
 
 # ==========================================
 # 1. Documento (El Contenedor Fuente)
