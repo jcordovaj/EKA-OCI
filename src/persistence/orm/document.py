@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, JSON, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from src.persistence.models import Base
+from persistence.models import Base
 
 # Asumimos que 'Base' ha sido definido previamente en la capa de ORM o se importa:
 #from src.persistence.orm.base import Base # Asumiendo una clase base para las tablas
@@ -32,9 +32,11 @@ class Document(Base):
 # 2. MetadataBundle (Los Atributos Generados)
 # Mapea el Bundle de Metadatos generado por el Inspector.
 # ==========================================
+
 class Metadata(Base):
     """Almacena los metadatos clave generados durante el procesamiento."""
     __tablename__ = "metadata_artifacts"
+    __allow_unmapped__ = True  # Esto permite que SQLAlchemy ignore los atributos no mapeados.
     id = Column(Integer, primary_key=True)
 
     # FOREIGN KEY: Relaciona este metadata con un job específico.
@@ -50,7 +52,7 @@ class Metadata(Base):
     created_at = Column(DateTime, default=func.now())
 
     # Relación con el Job que generó estos metadatos.
-    job: "ProcessingJob" = relationship("ProcessingJob", back_populates="metadata")
+    job: "ProcessingJob" = relationship("ProcessingJob", back_populates="metadata_content")
 
 
 # ==========================================
@@ -60,6 +62,7 @@ class Metadata(Base):
 class ProcessingJob(Base):
     """Registro maestro del proceso de ingestión/procesamiento."""
     __tablename__ = "processing_jobs"
+    __allow_unmapped__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # FOREIGN KEY: Referencia al documento fuente.
@@ -70,7 +73,7 @@ class ProcessingJob(Base):
     last_updated = Column(DateTime, default=func.now())
 
     # Referencias a los artifacts y metadatos generados:
-    metadata: "Metadata" = relationship("Metadata", back_populates="job")
+    metadata_content: "Metadata" = relationship("Metadata", back_populates="job")
     
     # EL ARTEFACTO (el archivo Markdown final o JSON de artefactos)
     markdown_artifact_uri = Column(String, nullable=True, index=True) 

@@ -1,10 +1,9 @@
 # src/persistence/repositories/document_repository.py
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from src.domain.document import Document # Usamos el modelo del dominio para los datos entrantes
-from src.persistence.orm.document import Document as ORMDocument
-from typing import Optional, Any
-from src.persistence.repositories.abstract_repository import AbstractRepository
+from domain.document import Document # Usamos el modelo del dominio para los datos entrantes
+from persistence.orm.document import Document
+from persistence.repositories.abstract_repository import AbstractRepository
 
 class DocumentRepository(AbstractRepository[Document]):
 
@@ -18,7 +17,7 @@ class DocumentRepository(AbstractRepository[Document]):
             .first()
         )
 
-    def create(self, db: Session, **data: Any) -> Document:
+    def create(self, db: Session, **data: any) -> Document:
         document = Document(**data)
 
         db.add(document)
@@ -31,7 +30,7 @@ class DocumentRepository(AbstractRepository[Document]):
         self,
         db: Session,
         record_id: int,
-        updates: dict[str, Any],
+        updates: dict[str, any],
     ) -> Optional[Document]:
 
         document = self.get_by_id(db, record_id)

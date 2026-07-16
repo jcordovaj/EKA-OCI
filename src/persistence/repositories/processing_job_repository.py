@@ -1,10 +1,7 @@
 from typing import Optional, Any
-
 from sqlalchemy.orm import Session
-
-from src.persistence.orm.document import ProcessingJob
-from src.persistence.repositories.abstract_repository import AbstractRepository
-
+from persistence.orm.document import ProcessingJob
+from persistence.repositories.abstract_repository import AbstractRepository
 
 class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
 
