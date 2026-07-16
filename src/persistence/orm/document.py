@@ -2,6 +2,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, JSON, func
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from src.persistence.models import Base
 
 # Asumimos que 'Base' ha sido definido previamente en la capa de ORM o se importa:
 #from src.persistence.orm.base import Base # Asumiendo una clase base para las tablas
@@ -16,8 +17,8 @@ class Document(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # Atributos directos del dominio
-    original_filename = Column(String, nullable=False, index=True)
-    mime_type = Column(String, nullable=False)
+    original_filename   = Column(String, nullable=False, index=True)
+    mime_type           = Column(String, nullable=False)
     ingestion_timestamp = Column(DateTime, default=func.now(), index=True)
     
     # Referencias a objetos relacionados:

@@ -1,10 +1,4 @@
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
-
-class Documento(Base):
-    __tablename__ = "documentos"
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, nullable=False)
-    # Aquí iremos agregando los campos de vectores después
+class Base(DeclarativeBase):
+    pass

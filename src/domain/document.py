@@ -27,9 +27,7 @@ class DocumentInspectorResult(str, Enum):
 # ==========================================
 # DOMAIN MODELS (Pydantic Models)
 # ==========================================
-storage_uri: Optional[str]
-binary_hash: str
-size_bytes : int
+
 class Document(BaseModel):
     """Representa el documento tal como fue cargado por el usuario."""
     source_id          : Optional[str] = Field(None, description="ID único generado al cargar.")
@@ -58,5 +56,5 @@ class ProcessingJob(BaseModel):
     
     # Output Modelos de Artifacts
     markdown_artifact_bytes: Optional[bytes] = None
-    metadata      : MetadataBundle  = Field(..., description="Los metadatos generados durante el job.");
-    processing_log: List[str]       = Field(default_factory=list, description="Registro detallado de pasos y advertencias del pipeline.");
+    metadata          : MetadataBundle  = Field(..., description="Los metadatos generados durante el job.");
+    processing_log    : List[str]       = Field(default_factory=list, description="Registro detallado de pasos y advertencias del pipeline.");
