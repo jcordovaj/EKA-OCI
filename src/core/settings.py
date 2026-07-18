@@ -1,52 +1,38 @@
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    """
-    Configuración global para EKA-OCI. 
-    Todas las credenciales sensibles deben ser proporcionadas por el entorno operativo.
-    Se usa Pydantic's base settings que lee de variables de entorno (OS Environment).
-    """
-    # Constantes
-    max_pdf_pages: int = Field(default=500, alias="MAX_PDF_PAGES")
-    
-    # Urls del sistema
-    openrouter_base_url: str = Field(default="https://openrouter.ai/", alias="OPENROUTER_BASE_URL")
-
-    # Estados de Job
-    status_pending  : str = Field(default="PENDING", alias="STATUS_PENDING")
-    status_completed: str = Field(default="COMPLETED", alias="STATUS_COMPLETED")
-    status_failed   : str = Field(default="FAILED", alias="STATUS_FAILED")
-
     # PostgreSQL
-    db_host    : str = Field(default="localhost", alias="DB_HOST")
-    db_port    : int = Field(default=5432, alias="DB_PORT")
-    db_name    : str = Field(default="eka_db", alias="DB_NAME")
-    db_user    : str = Field(default="admin", alias="DB_USER")
-    db_password: str = Field(default="password", alias="DB_PASSWORD")
+    db_host: str = "127.0.0.1"
+    db_port: int = 5433
+    db_name: str = "eka_db"
+    db_user: str = "admin"
+    db_password: str = "password"
 
     # Redis
-    redis_host: str = Field(default="localhost", alias="REDIS_HOST")
-    redis_port: int = Field(default=6379, alias="REDIS_PORT")
+    redis_host: str = "localhost"
+    redis_port: int = 6379
 
     # MinIO
-    minio_endpoint  : str = Field(default="localhost:9000", alias="MINIO_ENDPOINT")
-    minio_access_key: str = Field(default="admin", alias="MINIO_ACCESS_KEY")
-    minio_secret_key: str = Field(default="password", alias="MINIO_SECRET_KEY")
+    minio_endpoint: str = "localhost:9000"
+    minio_access_key: str = "admin"
+    minio_secret_key: str = "password"
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=False,
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=None, extra="ignore")
+
+    def __init__(self, **values):
+        super().__init__(**values)
+        # Blindaje de fuerza bruta para TODOS los servicios
+        self.db_host = "127.0.0.1"
+        self.db_port = 5433
+        self.redis_host = "localhost"
+        self.redis_port = 6379
+        self.minio_endpoint = "localhost:9000"
 
     @property
     def database_url(self) -> str:
         return (
-            f"postgresql+psycopg2://"
-            f"{self.db_user}:{self.db_password}"
-            f"@{self.db_host}:{self.db_port}"
-            f"/{self.db_name}"
+            f"postgresql+psycopg2://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
 settings = Settings()

@@ -26,9 +26,9 @@ class ProcessingOrchestrator:
 
     def process_document(self, file_path: Path):
         # Usamos los valores de la instancia 'settings' que ya está configurada
-        status_pending = getattr(settings, 'status_pending', 'PENDING')
+        status_pending   = getattr(settings, 'status_pending', 'PENDING')
         status_completed = getattr(settings, 'status_completed', 'COMPLETED')
-        status_failed = getattr(settings, 'status_failed', 'FAILED')
+        status_failed    = getattr(settings, 'status_failed', 'FAILED')
         
         #job = self.repo.create_job(file_path.name, status=ProcessingJobStatus.PENDING)
         job = self.repo.create_job(file_path.name, status=status_pending)
