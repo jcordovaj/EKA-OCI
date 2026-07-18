@@ -1,8 +1,24 @@
 # src/persistence/repositories/document_repository.py
+from persistence.orm.document import ProcessingJob
 from persistence.repositories.abstract_repository import AbstractRepository
 from sqlalchemy.orm import Session # Importamos la sesión de base de datos y SQLAlchemy ORM
-from typing import Optional, List 
+from typing import Any, Optional, List 
 import datetime as dt
+
+class JobRepository:
+    def create(self, db: Session, document_id: int, status: str = "PENDING") -> ProcessingJob:
+        job = ProcessingJob(document_source_id=document_id, status=status)
+        db.add(job)
+        db.flush()
+        db.refresh(job)
+        return job
+
+    def update_status(self, db: Session, job_id: int, status: str) -> ProcessingJob:
+        job = db.query(ProcessingJob).filter(ProcessingJob.id == job_id).first()
+        if job:
+            job.status = status
+            db.flush()
+        return job
 
 class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
     """
@@ -48,6 +64,18 @@ class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
         job = self.get_by_id(db, record_id)
         if not job:
             return None
+        
+        
+    def update_job(self, db: Session, job_id: int, status: str):
+        """Actualiza el Metadata asociado al Job."""
+        # Usamos el modelo del dominio para asegurar que los datos son correctos
+        # Esto es igual a document.validate(status).save()
+        job = db.query(JobModel).filter(JobModel.id == job_id).first()
+        if job:
+            job.status = status
+            db.flush()
+            return job
+        return None    
 
         # Actualizamos la metadata con nuevos campos.
         # job.status = status 

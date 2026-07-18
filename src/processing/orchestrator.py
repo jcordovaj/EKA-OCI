@@ -38,7 +38,7 @@ class ProcessingOrchestrator:
             raw_content = self.extractor.extract(file_path)
             manifesto = self.metadata_gen.generate(inspection, raw_content)
             
-            self.repo.save_metadata(manifesto)
+            self.repo.save_metadata(job.id, manifesto) 
             self.repo.update_job(job.id, status=ProcessingJobStatus.COMPLETED)
             self._move_to_storage(file_path, "processed")
             

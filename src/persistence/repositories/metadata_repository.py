@@ -8,10 +8,15 @@ class MetadataRepository(AbstractRepository[Metadata]):
     def __init__(self):
         super().__init__(Metadata)
 
-    # El método create ahora acepta nuestro objeto de dominio
-    def create(self, db: Session, manifesto: MetadataManifesto) -> Metadata:
+    # El método create ahora acepta el manifesto de dominio y el job_id requerido por el ORM
+    def create(self, db: Session, job_id: int, manifesto: MetadataManifesto) -> Metadata:
         # Convertimos nuestro Dataclass de dominio a un dict para el ORM
         data = manifesto.to_dict() 
+        
+        # INYECCIÓN CRÍTICA: Añadimos el job_id al diccionario antes de crear el objeto ORM
+        # Esto satisface la restricción: job_id = Column(Integer, ForeignKey(...), nullable=False)
+        data["job_id"] = job_id
+        
         metadata = Metadata(**data)
 
         db.add(metadata)
@@ -19,13 +24,6 @@ class MetadataRepository(AbstractRepository[Metadata]):
         db.refresh(metadata)
 
         return metadata
-
-    """ def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
-            return (
-                db.query(Metadata)
-                .filter(Metadata.id == record_id)
-                .first()
-            ) """
 
     def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
         return db.query(Metadata).filter(Metadata.id == record_id).first()
