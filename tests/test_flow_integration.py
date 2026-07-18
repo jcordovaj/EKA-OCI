@@ -1,5 +1,6 @@
 # Smoke test para el flujo completo de procesamiento de documentos
 from pathlib import Path
+from persistence.repositories.orchestrator_repository import OrchestratorRepository
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from core.settings import Settings
@@ -31,7 +32,7 @@ test_file.write_text("dummy content")
 
 def run_test():
     # El repositorio no recibe la sesión en el init porque tu diseño es stateless
-    repo = MetadataRepository() 
+    repo = OrchestratorRepository(db_session)
     storage = S3StorageProvider()
     
     # El orquestador recibe las dependencias que necesita
