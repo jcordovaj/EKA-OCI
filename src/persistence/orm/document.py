@@ -42,14 +42,14 @@ class Metadata(Base):
     # FOREIGN KEY: Relaciona este metadata con un job específico.
     job_id = Column(Integer, ForeignKey("processing_jobs.id"), nullable=False, unique=True)
 
-    classification = Column(String, nullable=False, index=True) # Enum del InspectorResult
+    classification     = Column(String, nullable=False, index=True) # Enum del InspectorResult
     suggested_strategy = Column(String, nullable=False)        # Estrategia detectada
-    document_type = Column(String, nullable=False)           # Tipo de contenido (ej: 'Reporte')
-    confidence_score = Column(Float, default=1.0)            # Score de confianza
+    document_type      = Column(String, nullable=False)           # Tipo de contenido (ej: 'Reporte')
+    confidence_score   = Column(Float, default=1.0)            # Score de confianza
 
     # Campos flexibles para keywords y otros datos semiestructurados
     extracted_keywords = Column(JSON, default=[]) # Usamos JSONB si es PostgreSQL real
-    created_at = Column(DateTime, default=func.now())
+    created_at         = Column(DateTime, default=func.now())
 
     # Relación con el Job que generó estos metadatos.
     job: "ProcessingJob" = relationship("ProcessingJob", back_populates="metadata_content")
@@ -61,15 +61,15 @@ class Metadata(Base):
 # ==========================================
 class ProcessingJob(Base):
     """Registro maestro del proceso de ingestión/procesamiento."""
-    __tablename__ = "processing_jobs"
+    __tablename__      = "processing_jobs"
     __allow_unmapped__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # FOREIGN KEY: Referencia al documento fuente.
     document_source_id = Column(Integer, ForeignKey("documentos.id"), nullable=False)
 
-    status = Column(String, nullable=False) # Status (Enum del dominio)
-    created_at = Column(DateTime, default=func.now(), index=True)
+    status       = Column(String, nullable=False) # Status (Enum del dominio)
+    created_at   = Column(DateTime, default=func.now(), index=True)
     last_updated = Column(DateTime, default=func.now())
 
     # Referencias a los artifacts y metadatos generados:

@@ -15,19 +15,43 @@ class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
         return db.query(ProcessingJob).filter(ProcessingJob.id == job_id).first()
 
     def create(self, db: Session, document_source_id: int, **job_attrs: Any) -> ProcessingJob:
-        """Crea y persiste una nueva instancia del Job."""
+        # Si 'status' viene como Enum, extraemos su valor (string)
+        if "status" in job_attrs and hasattr(job_attrs["status"], "value"):
+            job_attrs["status"] = job_attrs["status"].value
+            
         job = ProcessingJob(document_source_id=document_source_id, **job_attrs)
         db.add(job)
-        db.flush()  # Usamos flush para mantener la atomicidad en el orquestador
+        db.flush()
         db.refresh(job)
         return job
 
-    def update_status(self, db: Session, job_id: int, status: str) -> Optional[ProcessingJob]:
-        """Actualiza el estado del Job."""
+    def update_status(self, db: Session, job_id: int, status: Any) -> Optional[ProcessingJob]:
+        # FUERZA la conversión a string. Si es Enum, .value; si es objeto, str().
+        # No dependemos de hasattr ni de lógica compleja.
+        status_value = str(status.value) if hasattr(status, "value") else str(status)
+        
         job = self.get_by_id(db, job_id)
         if not job:
             return None
-
-        job.status = status
+        
+        job.status = status_value
         db.flush()
         return job
+
+    def update(self, db: Session, record_id: int, updates: dict[str, Any]) -> Optional[ProcessingJob]:
+        job = self.get_by_id(db, record_id)
+        if not job:
+            return None
+        for key, value in updates.items():
+            setattr(job, key, value)
+        db.flush()
+        db.refresh(job)
+        return job
+
+    def delete(self, db: Session, record_id: int) -> bool:
+        job = self.get_by_id(db, record_id)
+        if not job:
+            return False
+        db.delete(job)
+        db.flush()
+        return True

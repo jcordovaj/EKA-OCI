@@ -14,6 +14,13 @@ class MetadataManifesto:
     page_count: int         
     status: ProcessingJobStatus  # Se usa el Enum, no un string plano
 
+    def to_dict(self) -> dict:
+        """Serializa el objeto a diccionario convirtiendo Enums."""
+        data = asdict(self)
+        # Accedemos al status directamente del objeto
+        data['status'] = self.status.value 
+        return data
+    
 class MetadataGenerator:
     """
     Responsabilidad única: Construir el manifesto a partir de los datos físicos 
@@ -35,9 +42,9 @@ class MetadataGenerator:
             status=ProcessingJobStatus.PENDING # Uso del Enum
         )
 
-    def to_dict(self, manifesto: MetadataManifesto) -> dict:
+    """ def to_dict(self, manifesto: MetadataManifesto) -> dict:
         # Convertimos a dict asegurando que el Enum se serialice bien
         data = asdict(manifesto)
         data['status'] = manifesto.status.value 
-        return data
+        return data """
     

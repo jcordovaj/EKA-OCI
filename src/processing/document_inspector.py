@@ -1,16 +1,17 @@
 import mimetypes
 from pathlib import Path
 from dataclasses import dataclass
-from dataclasses import dataclass
 
 @dataclass
 class InspectionResult:
+    # Campos obligatorios primero
     original_filename: str
     mime_type: str
     file_size: int
     file_path: Path
-    page_count: int         # Añadido para cumplimiento de D6
-    classification: str
+    # Valores por defecto después
+    page_count: int = 1
+    classification: str = "SIMPLE"
 
 class DocumentInspector:
     """

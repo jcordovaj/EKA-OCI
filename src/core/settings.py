@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # Urls del sistema
     openrouter_base_url: str = Field(default="https://openrouter.ai/", alias="OPENROUTER_BASE_URL")
 
+    # Estados de Job
+    status_pending  : str = Field(default="PENDING", alias="STATUS_PENDING")
+    status_completed: str = Field(default="COMPLETED", alias="STATUS_COMPLETED")
+    status_failed   : str = Field(default="FAILED", alias="STATUS_FAILED")
+
     # PostgreSQL
     db_host    : str = Field(default="localhost", alias="DB_HOST")
     db_port    : int = Field(default=5432, alias="DB_PORT")
@@ -43,6 +48,5 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}"
             f"/{self.db_name}"
         )
-
 
 settings = Settings()

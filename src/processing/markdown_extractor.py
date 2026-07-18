@@ -21,7 +21,6 @@ class MarkdownExtractor:
         """Guarda el artefacto resultante en un directorio de salida (ej: artifacts/)."""
         output_dir = Path("data/artifacts")
         output_dir.mkdir(parents=True, exist_ok=True)
-        
         output_path = output_dir / f"{original_path.stem}.md"
         output_path.write_text(content, encoding="utf-8")
         return output_path
