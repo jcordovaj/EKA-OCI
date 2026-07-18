@@ -9,10 +9,10 @@ from typing import Optional, List, Dict
 
 class DocumentStatus(str, Enum):
     """Estado del documento en el sistema."""
-    PENDING   = "PENDIENTE"        # Recibido, sin procesar.
-    INSPECTED = "INSPECCIONADO"    # Clasificado y con estrategia definida.
+    PENDING           = "PENDIENTE"        # Recibido, sin procesar.
+    INSPECTED         = "INSPECCIONADO"    # Clasificado y con estrategia definida.
     PROCESSING_FAILED = "FALLIDO"  # Error en la conversión o procesamiento.
-    COMPLETED = "COMPLETADO"       # Markdown generado y artefactos guardados.
+    COMPLETED         = "COMPLETADO"       # Markdown generado y artefactos guardados.
 
 class DocumentInspectorResult(str, Enum):
     """Clasificación inicial basada en el análisis documental."""

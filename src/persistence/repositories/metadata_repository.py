@@ -1,21 +1,17 @@
 from typing import Optional, Any
 from sqlalchemy.orm import Session
-from persistence.orm.document import Metadata
+from persistence.orm.document import Metadata  # Ajuste de path
 from persistence.repositories.abstract_repository import AbstractRepository
+from processing.metadata_generator import MetadataManifesto
 
 class MetadataRepository(AbstractRepository[Metadata]):
-
     def __init__(self):
         super().__init__(Metadata)
 
-    def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
-        return (
-            db.query(Metadata)
-            .filter(Metadata.id == record_id)
-            .first()
-        )
-
-    def create(self, db: Session, **data: Any) -> Metadata:
+    # El método create ahora acepta nuestro objeto de dominio
+    def create(self, db: Session, manifesto: MetadataManifesto) -> Metadata:
+        # Convertimos nuestro Dataclass de dominio a un dict para el ORM
+        data = manifesto.to_dict() 
         metadata = Metadata(**data)
 
         db.add(metadata)
@@ -24,6 +20,16 @@ class MetadataRepository(AbstractRepository[Metadata]):
 
         return metadata
 
+    """ def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
+            return (
+                db.query(Metadata)
+                .filter(Metadata.id == record_id)
+                .first()
+            ) """
+
+    def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
+        return db.query(Metadata).filter(Metadata.id == record_id).first()
+    
     def update(
         self,
         db: Session,

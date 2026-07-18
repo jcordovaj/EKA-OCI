@@ -1,7 +1,6 @@
 import json
 import os
 import pathlib
-
 import openai
 import pymupdf4llm
 from dotenv import load_dotenv

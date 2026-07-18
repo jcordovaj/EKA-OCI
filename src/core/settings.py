@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     Todas las credenciales sensibles deben ser proporcionadas por el entorno operativo.
     Se usa Pydantic's base settings que lee de variables de entorno (OS Environment).
     """
+    # Constantes
+    max_pdf_pages: int = Field(default=500, alias="MAX_PDF_PAGES")
+    
+    # Urls del sistema
+    openrouter_base_url: str = Field(default="https://openrouter.ai/", alias="OPENROUTER_BASE_URL")
+
     # PostgreSQL
     db_host    : str = Field(default="localhost", alias="DB_HOST")
     db_port    : int = Field(default=5432, alias="DB_PORT")

@@ -1,7 +1,5 @@
 from sqlalchemy.orm import Session
-
-from src.persistence.database import SessionLocal
-
+from persistence.database import SessionLocal
 
 class UnitOfWork:
     """

@@ -1,10 +1,11 @@
 import time
 from openai import OpenAI
 from openai import OpenAIError, RateLimitError, APIStatusError
+from core.settings import settings
 
 # Configuración inicial del cliente OpenRouter
 client = OpenAI(
-    base_url="https://openrouter.ai/",
+    base_url="operouter_base_url",  # Reemplaza con la URL de OpenRouter
     api_key="OPENROUTER_API_KEY",  # Reemplaza con tu token de OpenRouter
 )
 
