@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from persistence.orm.document import ProcessingJob
 from persistence.repositories.abstract_repository import AbstractRepository
 
+
 class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
     def __init__(self):
         super().__init__(ProcessingJob)
@@ -32,4 +33,3 @@ class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
         job.status = status_value
         db.flush()
         return job
-    

@@ -17,23 +17,23 @@ class IngestionWatcher:
     def run(self):
         """Escanea el inbox y procesa archivos nuevos."""
         files = self.storage.list_objects("inbox/")
-        
+        if not files:
+            print("No hay archivos en inbox.")
+            return
+
         for file_key in files:
-            if file_key.endswith('/'): 
-                continue
-            
-            filename = file_key.split('/')[-1]
-            
-            # Idempotencia: Consultamos mediante la fachada unificada
-            if self.repo_facade.get_job_by_filename(filename):
-                print(f"Archivo ya registrado en BD: {filename}. Saltando.")
-                continue
-            
             try:
-                print(f"Iniciando proceso: {file_key}")
+                # 1. Procesar
                 self.orchestrator.process_document(file_key)
+                
+                # 2. Cierre del autómata (CRÍTICO)
+                self.storage.move(file_key, "processed/" + file_key.split('/')[-1])
+                print(f"Archivo {file_key} procesado y movido exitosamente.")
+                
             except Exception as e:
-                logging.error(f"Falla crítica en ingesta de {file_key}: {e}")
+                # 3. Gestión de errores (mover a 'failed/' si el proceso falla)
+                self.storage.move(file_key, "failed/" + file_key.split('/')[-1])
+                print(f"Error procesando {file_key}: {e}")  
                 
                 # El movimiento a 'rejected' ya es gestionado por el Orchestrator 
                 # en caso de fallo, manteniendo la atomicidad.
