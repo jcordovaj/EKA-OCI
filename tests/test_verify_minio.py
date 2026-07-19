@@ -1,5 +1,5 @@
 from minio import Minio
-from src.core.settings import settings
+from core.settings import settings
 
 def test_minio_connection():
     print(f"\n----- VERIFICANDO MINIO -----")
