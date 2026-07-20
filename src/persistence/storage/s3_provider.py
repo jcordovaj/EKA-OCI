@@ -1,10 +1,10 @@
 import boto3
-from core.settings import settings # Importación centralizada
+from core.settings import settings
 
 class S3StorageProvider:
-    def __init__(self):
-        # Usamos settings en lugar de os.getenv
-        endpoint = settings.minio_endpoint
+    def __init__(self, custom_settings=None):
+        self.settings = custom_settings or settings
+        endpoint = self.settings.STORAGE_ENDPOINT
         
         if not endpoint.startswith("http"):
             endpoint = f"http://{endpoint}"
@@ -12,10 +12,10 @@ class S3StorageProvider:
         self.client = boto3.client(
             's3',
             endpoint_url=endpoint,
-            aws_access_key_id=settings.minio_access_key,
-            aws_secret_access_key=settings.minio_secret_key
+            aws_access_key_id=self.settings.STORAGE_ACCESS_KEY,
+            aws_secret_access_key=self.settings.STORAGE_SECRET_KEY
         )
-        self.bucket = settings.minio_bucket # Uso del parámetro centralizado
+        self.bucket = self.settings.BUCKET_NAME
 
     def upload(self, local_path: str, destination: str) -> None:
         with open(local_path, 'rb') as data:

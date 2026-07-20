@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from src.config.settings import settings
+from core.settings import settings
 # Asegúrate de importar tus clases reales de conexión y workers
 # from src.infrastructure.storage.minio_client import MinioStorage
 # from src.infrastructure.db.session import SessionLocal

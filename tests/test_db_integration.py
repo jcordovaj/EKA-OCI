@@ -15,7 +15,7 @@ def test_rag_management_flow():
     logger.info("=== INICIANDO PRUEBA DE INTEGRACIÓN CON POSTGRESQL (DOCKER) ===")
     
     # 1. Crear motor y sesión usando la configuración existente de settings
-    engine = create_engine(settings.DATABASE_URL)
+    engine       = create_engine(settings.DATABASE_URL)
     SessionLocal = sessionmaker(bind=engine)
     
     with SessionLocal() as session:

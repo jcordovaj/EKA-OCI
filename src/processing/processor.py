@@ -9,7 +9,7 @@ from core.settings import settings
 logger = logging.getLogger(__name__)
 
 class DocumentProcessor:
-    def __init__(self):
+    """ def __init__(self):
         # Inicialización de MinIO utilizando la configuración central
         self.minio_client = Minio(
             settings.MINIO_ENDPOINT,
@@ -24,7 +24,28 @@ class DocumentProcessor:
         self.SessionLocal = sessionmaker(bind=self.engine)
         
         # Asegurar que el bucket exista en MinIO al arrancar
-        self._ensure_bucket_exists()
+        self._ensure_bucket_exists() """
+    
+    def __init__(self):
+        # Resolución agnóstica del storage (compatible con MinIO, S3, etc.)
+        storage_endpoint = getattr(settings, "STORAGE_ENDPOINT", None) or \
+                        getattr(settings, "MINIO_ENDPOINT", "localhost:9000")
+        
+        storage_endpoint = storage_endpoint.replace("http://", "").replace("https://", "").replace("s3://", "")
+
+        self.minio_client = Minio(
+            storage_endpoint,
+            access_key=getattr(settings, "STORAGE_ACCESS_KEY", None) or getattr(settings, "MINIO_ACCESS_KEY", "minioadmin"),
+            secret_key=getattr(settings, "STORAGE_SECRET_KEY", None) or getattr(settings, "MINIO_SECRET_KEY", "minioadmin"),
+            secure=getattr(settings, "STORAGE_SECURE", False)
+        )
+        self.bucket_name = getattr(settings, "BUCKET_NAME", None) or getattr(settings, "MINIO_BUCKET_NAME", "eka-artifacts")
+        
+        # Inicialización de la base de datos
+        self.engine = create_engine(settings.DATABASE_URL)
+        self.SessionLocal = sessionmaker(bind=self.engine)
+        
+        self._ensure_bucket_exists()    
 
     def _ensure_bucket_exists(self):
         if not self.minio_client.bucket_exists(self.bucket_name):
