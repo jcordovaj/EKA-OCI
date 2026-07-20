@@ -1,10 +1,8 @@
-# src/persistence/repositories/document_repository.py
 # src/persistence/repositories/job_repository.py
 from typing import Optional, Any
 from sqlalchemy.orm import Session
 from persistence.orm.document import ProcessingJob
 from persistence.repositories.abstract_repository import AbstractRepository
-
 
 class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
     def __init__(self):
@@ -14,7 +12,6 @@ class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
         return db.query(ProcessingJob).filter(ProcessingJob.id == job_id).first()
 
     def get_by_filename(self, db: Session, filename: str) -> Optional[ProcessingJob]:
-        """Consulta centralizada para idempotencia."""
         return db.query(ProcessingJob).filter(ProcessingJob.original_filename == filename).first()
 
     def create(self, db: Session, document_source_id: int, **job_attrs: Any) -> ProcessingJob:
@@ -33,3 +30,14 @@ class ProcessingJobRepository(AbstractRepository[ProcessingJob]):
         job.status = status_value
         db.flush()
         return job
+    
+    # MÉTODOS CORREGIDOS: Reciben 'db: Session' para ser consistentes
+    def update(self, db: Session, job: ProcessingJob):
+        db.merge(job)
+        db.flush() # Usamos flush en lugar de commit para mantener la coherencia con UnitOfWork
+
+    def delete(self, db: Session, job_id: int):
+        job = self.get_by_id(db, job_id)
+        if job:
+            db.delete(job)
+            db.flush()

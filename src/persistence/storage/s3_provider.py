@@ -1,41 +1,31 @@
-import os
 import boto3
-from typing import Protocol
-
-class FileStorageProvider(Protocol):
-    def upload(self, local_path: str, destination: str) -> None: ...
+from core.settings import settings # Importación centralizada
 
 class S3StorageProvider:
     def __init__(self):
-        endpoint = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
-
-        # Validación rápida para evitar el error de endpoint
+        # Usamos settings en lugar de os.getenv
+        endpoint = settings.minio_endpoint
+        
         if not endpoint.startswith("http"):
             endpoint = f"http://{endpoint}"
 
         self.client = boto3.client(
             's3',
             endpoint_url=endpoint,
-            aws_access_key_id=os.getenv("MINIO_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("MINIO_SECRET_KEY")
+            aws_access_key_id=settings.minio_access_key,
+            aws_secret_access_key=settings.minio_secret_key
         )
-        self.bucket = "ekastorage"
+        self.bucket = settings.minio_bucket # Uso del parámetro centralizado
 
     def upload(self, local_path: str, destination: str) -> None:
         with open(local_path, 'rb') as data:
             self.client.upload_fileobj(data, self.bucket, destination)
 
     def list_objects(self, prefix: str) -> list:
-        """Lista objetos en el bucket bajo un prefijo dado."""
         response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
         return [obj['Key'] for obj in response.get('Contents', [])]
 
     def get_hash(self, key: str) -> str:
-        """
-        Obtiene el ETag (hash MD5) de S3. 
-        Nota: Para SHA-256 estricto, habría que descargar el archivo, pero 
-        para detección inicial el ETag es suficiente como proxy de cambio.
-        """
         response = self.client.head_object(Bucket=self.bucket, Key=key)
         return response['ETag'].strip('"')
 
@@ -45,3 +35,4 @@ class S3StorageProvider:
 
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=key)
+        

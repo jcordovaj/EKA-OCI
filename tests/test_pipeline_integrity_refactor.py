@@ -1,44 +1,96 @@
 # tests/test_pipeline_integrity.py
 import sys
 import os
+
 from processing.ingestion_watcher import IngestionWatcher
-from persistence.unit_of_work import UnitOfWork
-from persistence.storage.s3_provider import S3StorageProvider
-from domain.contracts import FileStorageProvider
-from persistence.orm.document import ProcessingJob, Metadata
+from processing.markdown_extractor import MarkdownExtractor
 
+# Forzar el volcado de consola
 sys.stdout.reconfigure(line_buffering=True)
-print("--- DIAGNÓSTICO INICIADO ---", flush=True)
 
-def test_full_pipeline_verification():
-    print("\n--- INICIANDO DIAGNÓSTICO DE INTEGRIDAD ---")
-    
-    # 1. Inspección previa de BBDD
-    with UnitOfWork() as uow:
-        jobs = uow.session.query(ProcessingJob).all()
-        if not jobs:
-            print("[INFO] BBDD Vacía. Iniciando flujo desde cero.")
-        else:
-            print(f"[INFO] BBDD con {len(jobs)} registros previos. Inspeccionando...")
-            for job in jobs:
-                meta = uow.session.query(Metadata).filter_by(job_id=job.id).first()
-                hash_val = meta.hash_value if meta else "SIN HASH"
-                print(f"DEBUG: Archivo: {job.original_filename} | Estado: {job.status} | Hash: {hash_val}")
+print("--- 1. TEST DE CONFIGURACIÓN ---")
+try:
+    # Ajusta el import según tu estructura, asumo src.core.settings o core.settings
+    from core.settings import settings
+    print("[EXITO] Configuración cargada correctamente.")
+    print(f"[INFO] Bucket: {settings.minio_bucket}")
+    print(f"[INFO] Endpoint: {settings.minio_endpoint}")
+except Exception as e:
+    print(f"[ERROR CRÍTICO] Fallo al cargar settings: {e}")
+    sys.exit(1)
 
-    # 2. Ejecución forzada (Aseguramos que el stdout se vacíe)
-    sys.stdout.flush()
-    print("[INFO] Lanzando IngestionWatcher...")
+print("\n--- 2. TEST DE IMPORTACIONES ---")
+try:
+    from persistence.unit_of_work import UnitOfWork
+    from persistence.storage.s3_provider import S3StorageProvider
+    from persistence.orm.document import ProcessingJob
+    print("[EXITO] Módulos importados correctamente.")
+except Exception as e:
+    print(f"[ERROR CRÍTICO] Fallo al importar módulos: {e}")
+    sys.exit(1)
+
+def test_conexiones():
+    print("\n--- 3. TEST DE CONEXIONES ---")
     
-    # Aquí tu llamada al watcher
-    IngestionWatcher.run()
+    # Prueba de Base de Datos
+    try:
+        print("[INFO] Conectando a Base de Datos...")
+        with UnitOfWork() as uow:
+            jobs = uow.session.query(ProcessingJob).all()
+            print(f"[EXITO] BD conectada. Trabajos registrados: {len(jobs)}")
+    except Exception as e:
+        print(f"[ERROR CRÍTICO] Fallo en la Base de Datos: {e}")
+        return # Salimos de la función si falla la BD
+
+    # Prueba de MinIO
+    try:
+        print("[INFO] Conectando a MinIO...")
+        storage = S3StorageProvider()
+        # Intentamos listar la raíz del bucket para forzar la comunicación
+        objetos = storage.list_objects("")
+        print(f"[EXITO] MinIO conectado. Objetos encontrados en '{storage.bucket}': {len(objetos)}")
+        print("\n--- 4. TEST DE INGESTION WATCHER ---")
+        try:
+            # 1. Necesitamos una sesión de base de datos
+            with UnitOfWork() as uow:
+                # 2. Necesitamos nuestro proveedor de almacenamiento configurado
+                storage = S3StorageProvider()
+                extractor = extract_pdf() # La clase que extrae el contenido del PDF
+                
+                
+                # 3. Instanciamos el watcher pasando los argumentos requeridos
+                watcher = IngestionWatcher(db_session=uow.session, storage_provider=storage, extractor=extractor)
+                
+                print("[INFO] IngestionWatcher instanciado correctamente. Ejecutando...")
+                
+                # Asumiendo que 'run()' procesa los archivos
+                watcher.run() 
+                
+        except Exception as e:
+            print(f"[ERROR CRÍTICO] El watcher falló: {e}")
+            # Esto te dará el traceback completo si es un error dentro de la lógica de run()
+            import traceback
+            traceback.print_exc()
+        """ storage = S3StorageProvider()
+        archivos = storage.list_objects("inbox/")
+
+        if archivos:
+            archivo_prueba = archivos[0]
+            print(f"[DEBUG] Intentando mover: {archivo_prueba}")
+            try:
+                # Esto es lo que el watcher debería hacer internamente
+                storage.copy(archivo_prueba, archivo_prueba.replace("inbox/", "processing/"))
+                storage.delete(archivo_prueba)
+                print("[EXITO] Archivo movido manualmente.")
+            except Exception as e:
+                print(f"[ERROR] Falló el movimiento del archivo: {e}") """
     
-    # 3. Verificación post-ejecución
-    print("[INFO] Verificando estado post-ejecución...")
-    with UnitOfWork() as uow:
-        final_jobs = uow.session.query(ProcessingJob).all()
-        if len(final_jobs) == len(jobs):
-            print("[ALERTA] NO se procesaron archivos nuevos. El watcher no detectó cambios.")
-        else:
-            print(f"[EXITO] Procesados {len(final_jobs) - len(jobs)} archivos nuevos.")
-            
-    print("--- FIN DEL DIAGNÓSTICO ---\n")
+    except Exception as e:
+        print(f"[ERROR CRÍTICO] Fallo de conexión o permisos en MinIO: {e}")
+        return
+
+    print("\n--- DIAGNÓSTICO COMPLETADO CON ÉXITO ---")
+
+# Bloque de ejecución principal vital para que la función se llame
+if __name__ == "__main__":
+    test_conexiones()

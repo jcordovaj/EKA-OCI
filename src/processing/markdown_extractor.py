@@ -5,7 +5,7 @@ class MarkdownExtractor:
     Responsabilidad única: Extraer el contenido de un archivo y convertirlo a Markdown.
     """
     
-    def extract(self, file_path: Path) -> str:
+    def extract_pdf(self, file_path: Path) -> str:
         """
         Temporalmente, implementamos una lógica base y progresiva. 
         Siguiente sprint, se integrará la lógica de OCR o parsers de documentos.

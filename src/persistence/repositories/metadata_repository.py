@@ -24,3 +24,13 @@ class MetadataRepository(AbstractRepository[Metadata]):
     def get_by_id(self, db: Session, record_id: int) -> Optional[Metadata]:
         return db.query(Metadata).filter(Metadata.id == record_id).first()
     
+    def update(self, db: Session, metadata: Metadata):
+        db.merge(metadata)
+        db.flush()
+
+    def delete(self, db: Session, metadata_id: int):
+        # Asumiendo que Metadata tiene un atributo 'id'
+        meta = db.query(Metadata).filter_by(id=metadata_id).first()
+        if meta:
+            db.delete(meta)
+            db.flush()

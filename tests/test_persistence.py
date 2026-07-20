@@ -1,7 +1,6 @@
 from persistence.database import SessionLocal
 from persistence.repositories.document_repository import DocumentRepository
 from persistence.orm.document import Document
-
 from persistence.models import Base
 from persistence.database import engine
 
