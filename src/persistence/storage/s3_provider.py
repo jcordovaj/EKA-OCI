@@ -28,6 +28,11 @@ class S3StorageProvider:
     def get_hash(self, key: str) -> str:
         response = self.client.head_object(Bucket=self.bucket, Key=key)
         return response['ETag'].strip('"')
+    
+    def get_object_stream(self, object_key: str):
+        """Retorna un stream de lectura del objeto desde S3/MinIO."""
+        response = self.client.get_object(Bucket=self.bucket, Key=object_key)
+        return response['Body']
 
     def copy(self, source_key: str, dest_key: str) -> None:
         copy_source = {'Bucket': self.bucket, 'Key': source_key}
@@ -35,4 +40,12 @@ class S3StorageProvider:
 
     def delete(self, key: str) -> None:
         self.client.delete_object(Bucket=self.bucket, Key=key)
+
+    def move(self, source_key: str, dest_key: str) -> None:
+        """Mueve un objeto dentro del mismo bucket (copiar + eliminar origen)."""
+        self.copy(source_key, dest_key)
+        self.delete(source_key)
         
+    def move_object(self, source_key: str, dest_key: str) -> None:
+        """Mueve un objeto dentro del Object Storage."""
+        self.move(source_key, dest_key)

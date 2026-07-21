@@ -5,32 +5,19 @@ from minio import Minio
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from core.settings import settings
+import hashlib
 
 logger = logging.getLogger(__name__)
 
 class DocumentProcessor:
-    """ def __init__(self):
-        # Inicialización de MinIO utilizando la configuración central
-        self.minio_client = Minio(
-            settings.MINIO_ENDPOINT,
-            access_key=settings.MINIO_ACCESS_KEY,
-            secret_key=settings.MINIO_SECRET_KEY,
-            secure=settings.MINIO_SECURE
-        )
-        self.bucket_name = getattr(settings, "MINIO_BUCKET_NAME", "eka-artifacts")
         
-        # Inicialización de la base de datos para actualizar processing_jobs
-        self.engine = create_engine(settings.DATABASE_URL)
-        self.SessionLocal = sessionmaker(bind=self.engine)
-        
-        # Asegurar que el bucket exista en MinIO al arrancar
-        self._ensure_bucket_exists() """
-    
-    def __init__(self):
-        # Resolución agnóstica del storage (compatible con MinIO, S3, etc.)
+    def __init__(self, storage_provider=None, delta_manager=None):
+        self.storage = storage_provider
+        self.delta_manager = delta_manager
+
+        # Conexión exclusiva al Storage en Cloud (MinIO/OCI Object Storage)
         storage_endpoint = getattr(settings, "STORAGE_ENDPOINT", None) or \
                         getattr(settings, "MINIO_ENDPOINT", "localhost:9000")
-        
         storage_endpoint = storage_endpoint.replace("http://", "").replace("https://", "").replace("s3://", "")
 
         self.minio_client = Minio(
@@ -41,16 +28,58 @@ class DocumentProcessor:
         )
         self.bucket_name = getattr(settings, "BUCKET_NAME", None) or getattr(settings, "MINIO_BUCKET_NAME", "eka-artifacts")
         
-        # Inicialización de la base de datos
+        # Inicialización de la base de datos PostgreSQL en contenedor
         self.engine = create_engine(settings.DATABASE_URL)
         self.SessionLocal = sessionmaker(bind=self.engine)
         
-        self._ensure_bucket_exists()    
+        self._ensure_bucket_exists()  
+
+    def process_object(self, file_key: str, strategy: str, classification: str) -> None:
+        """Flujo OCI-Native estricto: Procesa objetos directamente desde el Object Storage."""
+        filename = file_key.split('/')[-1]
+        logger.info(f"Procesando archivo cloud {filename} con estrategia: {strategy} [Clasificación: {classification}]")
+
+        try:
+            # 1. Obtención de stream remoto limpio desde S3/MinIO
+            response = self.minio_client.get_object(self.bucket_name, file_key)
+            file_bytes = response.read()
+            response.close()
+
+            # Cálculo de hash INCONDICIONAL para la idempotencia
+            current_hash = hashlib.sha256(file_bytes).hexdigest()
+
+            # 2. Extracción de texto plano real
+            extracted_text = ""
+            if filename.lower().endswith('.pdf'):
+                try:
+                    import pypdf
+                    reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                    pages_text = [page.extract_text() or "" for page in reader.pages]
+                    extracted_text = "\n".join(pages_text)
+                except Exception as ex:
+                    logger.warning(f"Error extrayendo texto del PDF para {filename}: {ex}")
+                    extracted_text = "[Aviso: Error en lectura nativa de PDF]"
+            else:
+                extracted_text = file_bytes.decode('utf-8', errors='ignore')
+
+            # Markdown final
+            markdown_content = f"# Documento Procesado: {filename}\n\n{extracted_text}"
+
+            # 3. Persistencia en MinIO
+            output_key = f"markdowns/{filename.rsplit('.', 1)[0]}.md"
+            self._upload_string_to_minio(markdown_content, output_key)
+
+            # 4. Consolidación INMEDIATA en PostgreSQL (Ahora siempre se ejecuta)
+            self._persist_db_record(filename, current_hash, output_key)
+
+        except Exception as e:
+            logger.error(f"Error crítico procesando {filename} en arquitectura cloud: {e}")
+            raise e
 
     def _ensure_bucket_exists(self):
         if not self.minio_client.bucket_exists(self.bucket_name):
             self.minio_client.make_bucket(self.bucket_name)
-            logger.info(f"Bucket de MinIO creado automáticamente: {self.bucket_name}")
+            logger.info(f"Bucket cloud creado automáticamente: {self.bucket_name}")
 
     def process_file(self, file_path: Path, strategy: str, classification: str, error_msg: str = None, doc_id: int = None):
         logger.info(f"Procesando archivo {file_path.name} con estrategia: {strategy} [Clasificación: {classification}]")
@@ -71,8 +100,7 @@ class DocumentProcessor:
             if doc_id:
                 self._update_job_status(doc_id, "FAILED", str(e))
 
-    def _upload_to_minio(self, file_path: Path, artifact_content: str, destination_path: str):
-        """Sube el contenido procesado (ej. Markdown) directamente a MinIO."""
+    def _upload_string_to_minio(self, artifact_content: str, destination_path: str):
         content_bytes = artifact_content.encode("utf-8")
         data_stream = io.BytesIO(content_bytes)
         
@@ -83,8 +111,8 @@ class DocumentProcessor:
             length=len(content_bytes),
             content_type="text/markdown"
         )
-        logger.info(f"Artefacto persistido exitosamente en MinIO -> s3://{self.bucket_name}/{destination_path}")
-
+        logger.info(f"Artefacto persistido en MinIO Cloud -> s3://{self.bucket_name}/{destination_path}")
+    
     def _update_job_status(self, doc_id: int, status: str, error_message: str = None):
         """Actualiza el estado final en la tabla processing_jobs y documentos."""
         with self.SessionLocal() as session:
@@ -132,3 +160,39 @@ class DocumentProcessor:
         logger.error(f"-> Archivo rechazado: {file_path.name} | Motivo: {error_msg}")
         if doc_id:
             self._update_job_status(doc_id, "REJECTED", error_msg)
+            
+    def _persist_db_record(self, filename: str, file_hash: str, artifact_uri: str):
+        """Registra el estado final y el binary_hash en PostgreSQL asegurando idempotencia futura."""
+        try:
+            with self.SessionLocal() as session:
+                with session.begin():
+                    # 1. Insertar el documento base (Asegúrate de que original_filename tenga índice UNIQUE en BBDD)
+                    doc_result = session.execute(text("""
+                        INSERT INTO documentos (original_filename, mime_type, ingestion_timestamp, binary_hash, status)
+                        VALUES (:filename, 'application/pdf', NOW(), :file_hash, 'COMPLETED')
+                        ON CONFLICT (original_filename) DO UPDATE 
+                        SET binary_hash = :file_hash, status = 'COMPLETED'
+                        RETURNING id;
+                    """), {"filename": filename, "file_hash": file_hash})
+                    
+                    row = doc_result.fetchone()
+                    doc_id = row[0] if row else None
+
+                    if not doc_id:
+                        # Fallback por si el RETURNING no lo captura directo en alguna versión de driver
+                        id_res = session.execute(text("SELECT id FROM documentos WHERE original_filename = :filename;"), {"filename": filename})
+                        doc_row = id_res.fetchone()
+                        doc_id = doc_row[0] if doc_row else None
+
+                    if doc_id:
+                        # 2. Registrar el job asociado (Asegúrate de que document_source_id o la tupla tenga manejo de conflicto)
+                        session.execute(text("""
+                            INSERT INTO processing_jobs (document_source_id, status, created_at, markdown_artifact_uri)
+                            VALUES (:doc_id, 'COMPLETED', NOW(), :artifact_uri)
+                            ON CONFLICT DO NOTHING;
+                        """), {"doc_id": doc_id, "artifact_uri": artifact_uri})
+                        
+            logger.info(f"Trazabilidad Cloud registrada en BBDD para: {filename}")
+        except Exception as db_err:
+            logger.error(f"Falla crítica al registrar metadatos en BBDD cloud para {filename}: {db_err}")
+            raise db_err  

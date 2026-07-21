@@ -92,7 +92,7 @@ class IngestionWatcher:
                 logger.critical(f"Error crítico al mover objeto rechazado {file_key}: {e}")
 
     def _handle_dispatch_valid(self, immediate_files: list, lazy_files: list) -> None:
-        """Despacha los objetos válidos al DocumentProcessor nativo de OCI."""
+        """Despacha los objetos válidos al DocumentProcessor y purga el inbox."""
         if immediate_files:
             logger.info(f"Despachando {len(immediate_files)} objetos para procesamiento INMEDIATO.")
             for file_key in immediate_files:
@@ -102,6 +102,9 @@ class IngestionWatcher:
                 
                 if self.processor:
                     self.processor.process_object(file_key=file_key, strategy=strategy, classification=classification)
+                    # PURGA OCI-NATIVE: Eliminar del inbox tras procesamiento exitoso
+                    self.storage.delete(file_key)
+                    logger.info(f"Objeto purgado del inbox: {file_key}")
                 else:
                     logger.warning(f"DocumentProcessor no inyectado para procesar key: {file_key}")
 
@@ -114,6 +117,9 @@ class IngestionWatcher:
                 
                 if self.processor:
                     self.processor.process_object(file_key=file_key, strategy=strategy, classification=classification)
+                    # Opcional: Si se mueven a una carpeta lazy o se purgan según política
+                    self.storage.delete(file_key)
+                    logger.info(f"Objeto derivado y purgado del inbox: {file_key}")
 
     def _log_document_status(self, file_key: str, status: str, details: str) -> None:
         """Punto de registro para la trazabilidad atómica en Base de Datos."""
