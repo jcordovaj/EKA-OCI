@@ -1,0 +1,3 @@
+docker exec -it eka_postgres psql -U admin -d eka_db -c "ALTER TABLE documentos ADD CONSTRAINT uk_original_filename UNIQUE (original_filename);"
+
+docker exec -it eka_postgres psql -U admin -d eka_db -c "TRUNCATE documentos, processing_jobs, metadata_artifacts CASCADE;"
